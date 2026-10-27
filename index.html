@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quiz Python – Séances 1 et 2</title>
+<style>
+:root{--n:#14213d;--b:#2f6db5;--a:#e9b949;--bg:#fbfaf6;--r:#b3402a;--g:#2e7d5b;--l:#d9dce3}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.55 system-ui,sans-serif;background:var(--bg);color:var(--n);-webkit-user-select:none;user-select:none}
+h1,h2{font-family:Georgia,serif;margin:.2em 0}
+main{max-width:760px;margin:0 auto;padding:20px 16px 80px}
+.card{background:#fff;border:1px solid var(--l);border-radius:10px;padding:20px;margin:14px 0}
+.hide{display:none!important}
+ul{padding-left:20px}li{margin:6px 0}
+label{display:block;font-weight:600;margin:12px 0 4px}
+input[type=text]{width:100%;padding:10px;border:1px solid #b9bfcc;border-radius:6px;font:inherit;-webkit-user-select:text;user-select:text}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:560px){.row{grid-template-columns:1fr}}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--n);background:#fff;color:var(--n);padding:10px 16px}
+button.p{background:var(--n);color:#fff}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+.warn{background:#fdf0cf;border-left:4px solid var(--a);padding:10px 14px;border-radius:4px}
+.bar{position:sticky;top:0;z-index:5;background:var(--n);color:#fff;display:flex;justify-content:space-between;gap:10px;padding:10px 16px;font-weight:600}
+.bar.low #tm{color:#ffb4a2}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px;border:1.5px solid var(--l)}
+.opt.sel{border-color:var(--b);background:#eaf1fa;font-weight:600}
+.q{font-size:1.1em;font-weight:600}
+code{font-family:Consolas,monospace;background:#eef0f4;padding:1px 5px;border-radius:4px;font-size:.95em;white-space:pre-wrap}
+#grid{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+#grid button{width:38px;padding:6px 0;font-size:.9em}
+#grid .ok{background:#cfe0f5;border-color:var(--b)}
+#grid .cur{outline:3px solid var(--a)}
+.nav{display:flex;justify-content:space-between;margin-top:16px}
+#modal{position:fixed;inset:0;background:rgba(20,33,61,.75);display:flex;align-items:center;justify-content:center;padding:16px;z-index:9}
+#modal .card{max-width:440px}
+.req{color:var(--r)}input.bad{border-color:var(--r);background:#fdeeea}
+.big{font:700 3em Georgia,serif}
+</style></head><body>
+<div class="bar hide" id="bar"><span id="who"></span><span>Q <span id="qn"></span>/20</span><span>⏱ <span id="tm">30:00</span></span><span>Sorties : <span id="so">0</span></span></div>
+<main>
+<section id="intro">
+<h1>Quiz de programmation Python</h1>
+<p>Séances 1 et 2 : premiers pas, variables, conditions et boucles.</p>
+<div class="card"><h2>Règles du quiz</h2><ul>
+<li><b>20 questions</b> à choix multiple, une seule bonne réponse, <b>1 point</b> chacune : note sur 20.</li>
+<li><b>Durée : 30 minutes.</b> Le chronomètre démarre au clic sur « Commencer ». À zéro, le quiz est validé automatiquement.</li>
+<li>Vous pouvez naviguer entre les questions et changer une réponse jusqu’à la validation finale.</li>
+<li><b>Ne quittez jamais la page</b> : changer d’onglet, de fenêtre ou d’application, ou actualiser la page, compte comme une <b>sortie</b>.</li>
+<li><b>1ʳᵉ sortie</b> : avertissement, sans pénalité. <b>Dès la 2ᵉ sortie</b> : <b>−1 point par sortie</b>. <b>À la 5ᵉ sortie</b> : le quiz est clos et noté immédiatement.</li>
+<li>Copier, coller et clic droit sont désactivés. Une seule tentative par étudiant.</li>
+<li>Votre résultat est envoyé automatiquement à l’enseignant à la fin.</li></ul>
+<div class="warn">Fermez les autres applications et désactivez les notifications avant de commencer.</div></div>
+<div class="card"><h2>Votre identité</h2>
+<div class="row"><div><label for="nom">Nom <span class="req">*</span></label><input type="text" id="nom" autocomplete="off" required aria-required="true"></div>
+<div><label for="prenom">Prénom <span class="req">*</span></label><input type="text" id="prenom" autocomplete="off" required aria-required="true"></div>
+<div><label for="classe">Classe <span class="req">*</span></label><input type="text" id="classe" autocomplete="off"></div>
+<div><label for="code">Code étudiant <span class="req">*</span></label><input type="text" id="code" autocomplete="off"></div></div>
+<label style="font-weight:400;margin-top:16px"><input type="checkbox" id="ok"> J’ai lu et j’accepte les règles ci-dessus.</label>
+<p id="err" style="color:var(--r);min-height:1.5em"></p>
+<button class="p" id="go">Commencer le quiz</button></div>
+</section>
+<section id="quiz" class="hide">
+<div class="card"><p id="qt" class="q"></p><div id="ops"></div>
+<div class="nav"><button id="pv">Précédent</button><button id="nx" class="p">Suivant</button></div>
+<div id="grid"></div></div></section>
+<section id="end" class="hide">
+<div class="card"><h2 id="eh">Quiz terminé</h2><div class="big" id="sc"></div><p id="dt"></p><p id="st" class="warn"></p>
+<button id="rs">Renvoyer le résultat</button> <button id="dl">Télécharger le résultat (CSV)</button></div></section>
+</main>
+<div id="modal" class="hide"><div class="card"><h2 id="mh"></h2><p id="mp"></p><div id="mb"></div></div></div>
+<script>
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbzXntdZ5crNoJPEuLf2GtvLc9FpPj7P0EJF7vNwQ8pLmpMP5sr3_Gq_kEe6jK3p3RWn_g/exec";               // URL du script Google Apps Script (voir explications)
+const DUREE=30*60, MAXS=5, KEY="quizpy_s12_v1";
+// [question, [bonne réponse, faux, faux, faux]]
+const Q=[
+["Python est un langage…",["de haut niveau, interprété","de bas niveau, compilé","proche du langage du processeur","qui nécessite un compilateur C"]],
+["Que s’affiche-t-il avec `print(\"42\" + \"8\")` ?",["428","50","42 8","TypeError"]],
+["Que vaut `47 // 14` ?",["3","3.357","5","4"]],
+["Que vaut `47 % 14` ?",["5","3","33","0"]],
+["Que s’affiche-t-il avec `print(5 * 4 + 5 / 5)` ?",["21.0","5.0","21","25"]],
+["Quel nom de variable est invalide ?",["1angle","mon_angle","prixTotal","compte_balance"]],
+["Quel est le type de la valeur renvoyée par `input()` ?",["str (texte)","int","float","bool"]],
+["Que produit `print(\"Age : \" + 20)` ?",["Une TypeError","Age : 20","Age : + 20","Une SyntaxError"]],
+["Après `c = 10`, `c += 9`, `c *= 2`, que vaut `c` ?",["38","29","30","20"]],
+["`print(25 / 0)` provoque une erreur de quel type ?",["Erreur d’exécution","Erreur de syntaxe","Erreur sémantique","Aucune erreur"]],
+["Que vaut `\"3\" != 3` ?",["True","False","Une erreur","None"]],
+["Que vaut `True and False or not False` ?",["True","False","Une erreur","None"]],
+["`x = 5` puis `if x > 10: print(\"A\")` `elif x > 3: print(\"B\")` `else: print(\"C\")`. Que s’affiche-t-il ?",["B","A","C","A et B"]],
+["Quelle écriture produit les nombres de 1 à 10 inclus ?",["range(1, 11)","range(1, 10)","range(10)","range(0, 10)"]],
+["Que s’affiche-t-il avec `for i in range(0, 10, 3): print(i)` ?",["0 3 6 9","0 3 6","3 6 9","0 1 2 3"]],
+["Après `s = 0` et `for i in range(1, 5): s += i`, que vaut `s` ?",["10","15","4","5"]],
+["Quelle boucle choisir pour redemander une saisie jusqu’à ce qu’elle soit valide ?",["while","for","if","elif"]],
+["Que se passe-t-il avec `i = 0` puis `while i < 5: print(i)` ?",["Boucle infinie : affiche 0 sans fin","Affiche 0 à 4","Affiche 0 une seule fois","SyntaxError"]],
+["Avec `for i in range(1, 11): if i % 4 == 0: continue` puis `print(i)`, combien de nombres sont affichés ?",["8","10","9","2"]],
+["Que fait l’instruction `break` dans une boucle ?",["Quitte immédiatement la boucle","Passe au tour suivant","Arrête le programme","Redémarre la boucle"]]
+];
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/`([^`]+)`/g,"<code>$1</code>");
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const pad=n=>String(n).padStart(2,"0");
+let S=null,tick=null,away=false;
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function show(id){["intro","quiz","end"].forEach(x=>$(x).classList.toggle("hide",x!==id));$("bar").classList.toggle("hide",id!=="quiz")}
+function modal(h,p,btns){$("mh").textContent=h;$("mp").innerHTML=p;const b=$("mb");b.innerHTML="";btns.forEach(([t,f,c])=>{const e=document.createElement("button");e.textContent=t;if(c)e.className="p";e.onclick=()=>{$("modal").classList.add("hide");f&&f()};b.appendChild(e);b.appendChild(document.createTextNode(" "))});$("modal").classList.remove("hide")}
+$("go").onclick=()=>{
+  const id={nom:$("nom").value.trim(),prenom:$("prenom").value.trim(),classe:$("classe").value.trim(),code:$("code").value.trim()};
+  ["nom","prenom","classe","code"].forEach(k=>$(k).classList.remove("bad"));
+  const nomOk=v=>v.replace(/[^A-Za-zÀ-ÿ]/g,"").length>=2;
+  const bad=[];
+  if(!nomOk(id.nom))bad.push("nom");
+  if(!nomOk(id.prenom))bad.push("prenom");
+  if(!id.classe)bad.push("classe");
+  if(!id.code)bad.push("code");
+  if(bad.length){bad.forEach(k=>$(k).classList.add("bad"));$(bad[0]).focus();
+    $("err").textContent=(bad.includes("nom")||bad.includes("prenom"))?"Le nom et le prénom sont obligatoires (au moins 2 lettres chacun).":"Renseignez tous les champs.";return}
+  if(!$("ok").checked){$("err").textContent="Cochez la case pour accepter les règles.";return}
+  S={id,ord:shuf(Q.map((_,i)=>i)),opt:Q.map(()=>shuf([0,1,2,3])),rep:Q.map(()=>-1),i:0,debut:Date.now(),fin:Date.now()+DUREE*1000,sorties:0,done:false};
+  save();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
+  start();
+};
+function start(){show("quiz");$("who").textContent=S.id.prenom+" "+S.id.nom;render();clearInterval(tick);tick=setInterval(clock,500);clock()}
+function clock(){const l=Math.ceil((S.fin-Date.now())/1000);if(l<=0){finish("temps");return}
+  $("tm").textContent=pad(Math.floor(l/60))+":"+pad(l%60);$("bar").classList.toggle("low",l<=300);$("so").textContent=S.sorties}
+function render(){
+  const qi=S.ord[S.i];$("qn").textContent=S.i+1;$("qt").innerHTML=esc(Q[qi][0]);
+  const o=$("ops");o.innerHTML="";
+  S.opt[qi].forEach((k,n)=>{const b=document.createElement("button");b.className="opt"+(S.rep[qi]===k?" sel":"");
+    b.innerHTML=String.fromCharCode(65+n)+". "+esc(Q[qi][1][k]);b.onclick=()=>{S.rep[qi]=k;save();render()};o.appendChild(b)});
+  $("pv").disabled=S.i===0;$("nx").textContent=S.i===19?"Terminer le quiz":"Suivant";
+  const g=$("grid");g.innerHTML="";
+  S.ord.forEach((q,n)=>{const b=document.createElement("button");b.textContent=n+1;b.className=(S.rep[q]>-1?"ok ":"")+(n===S.i?"cur":"");b.onclick=()=>{S.i=n;save();render()};g.appendChild(b)});
+}
+$("pv").onclick=()=>{if(S.i>0){S.i--;save();render()}};
+$("nx").onclick=()=>{
+  if(S.i<19){S.i++;save();render();return}
+  const na=S.rep.filter(r=>r<0).length;
+  modal("Terminer le quiz ?",na?`Il reste <b>${na}</b> question(s) sans réponse. La validation est définitive.`:"La validation est définitive.",[["Revenir",null],["Valider",()=>finish("validation"),1]]);
+};
+// --- Suivi des sorties ---
+function out(){if(!S||S.done||away)return;away=true;S.sorties++;save();$("so").textContent=S.sorties;if(S.sorties>=MAXS)finish("sorties")}
+function back(){if(!away)return;away=false;if(!S||S.done)return;warn()}
+function warn(){
+  const k=S.sorties,left=MAXS-k;
+  if(k===1)modal("⚠ Avertissement","Vous avez quitté la page (sortie n° 1). <b>Aucune pénalité cette fois.</b> À partir de la prochaine sortie : <b>−1 point par sortie</b>.",[["J’ai compris",null,1]]);
+  else modal("Pénalité : −1 point",`Sortie n° ${k}. Pénalité totale : <b>−${k-1} point(s)</b>. `+(left===1?"<b>Une sortie de plus et le quiz sera clos.</b>":`Il reste ${left-1} sortie(s) avant la clôture.`),[["J’ai compris",null,1]]);
+}
+document.addEventListener("visibilitychange",()=>document.hidden?out():back());
+window.addEventListener("blur",out);window.addEventListener("focus",back);
+["contextmenu","copy","cut","paste"].forEach(e=>document.addEventListener(e,ev=>{if(!(ev.target.tagName==="INPUT"))ev.preventDefault()}));
+// --- Fin et résultats ---
+function result(){
+  const sc=S.rep.reduce((a,r)=>a+(r===0?1:0),0),pen=Math.max(0,S.sorties-1);
+  return{date:new Date().toLocaleString("fr-FR"),nom:S.id.nom,prenom:S.id.prenom,classe:S.id.classe,code:S.id.code,
+    score:sc,penalites:pen,note:Math.max(0,sc-pen),sorties:S.sorties,duree_s:Math.round((Math.min(Date.now(),S.fin)-S.debut)/1000),
+    motif:S.motif||"",reponses:S.rep.map(r=>r<0?"-":r===0?"V":"F").join("")};
+}
+function finish(m){
+  if(S.done)return;S.done=true;S.motif=m;save();clearInterval(tick);
+  try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}
+  $("modal").classList.add("hide");showEnd();send();
+}
+function showEnd(){
+  const r=result();show("end");
+  $("eh").textContent=S.motif==="sorties"?"Quiz clos : trop de sorties":S.motif==="temps"?"Temps écoulé":"Quiz terminé";
+  $("sc").textContent=r.note+" / 20";
+  $("dt").innerHTML=`${r.prenom} ${r.nom} (${r.classe}) : ${r.score} bonne(s) réponse(s), pénalités −${r.penalites}, ${r.sorties} sortie(s).`;
+}
+async function send(){
+  const st=$("st");
+  if(!SCRIPT_URL){st.textContent="Envoi automatique non configuré : téléchargez le CSV et remettez-le à l’enseignant.";return}
+  st.textContent="Envoi en cours…";
+  try{await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(result())});
+    st.textContent="Résultat envoyé à l’enseignant. Vous pouvez fermer cette page."}
+  catch(e){st.textContent="Échec de l’envoi. Vérifiez votre connexion, puis cliquez sur « Renvoyer le résultat »."}
+}
+$("rs").onclick=send;
+$("dl").onclick=()=>{const r=result(),k=Object.keys(r);
+  const csv=k.join(";")+"\n"+k.map(x=>'"'+String(r[x]).replace(/"/g,'""')+'"').join(";");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));
+  a.download=`quiz_${r.nom}_${r.prenom}.csv`.replace(/\s+/g,"_");a.click()};
+// --- Reprise après actualisation : compte comme une sortie ---
+(function(){
+  let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
+  if(!raw)return;
+  try{S=JSON.parse(raw)}catch(e){S=null;return}
+  if(S.done){showEnd();$("st").textContent="Ce quiz a déjà été passé sur cet appareil.";return}
+  if(Date.now()>=S.fin){finish("temps");return}
+  S.sorties++;save();
+  if(S.sorties>=MAXS){finish("sorties");return}
+  start();warn();
+})();
+</script></body></html>
